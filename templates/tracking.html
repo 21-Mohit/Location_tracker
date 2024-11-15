@@ -1,0 +1,113 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Location Tracking on Google Map</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            padding: 20px;  
+        }  
+        #map {  
+            width: 100%;  
+            height: 400px; /* Set the different height for the map */  
+            margin-top: 20px;  
+        }  
+    </style>  
+    <!-- Load the Google Maps JavaScript API -->  
+    <script async defer  
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtZVg-piRGZDw8HOL1CGJEDopi8sPBVPA&callback=initMap">  
+    </script>  
+</head>  
+<body>  
+    <h1>Location Tracking</h1>  
+    <button id="startTracking">Start Tracking</button>  
+    
+    <div id="locationDisplay"></div>  
+    <div id="map"></div>  
+
+    <script>  
+        let trackingInterval;  
+        let map;  
+        let marker;  
+        let deviceId;  // Variable to store the unique device ID  
+
+        // Function to generate a unique device ID  
+        function generateDeviceId() {  
+            return 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);  
+        }  
+
+        // Function to retrieve or create a device ID  
+        function getDeviceId() {  
+            // Check if a device ID is already stored in localStorage  
+            deviceId = localStorage.getItem('deviceId');  
+            if (!deviceId) {  
+                deviceId = generateDeviceId();  // Generate a new device ID  
+                localStorage.setItem('deviceId', deviceId);  // Store it in localStorage  
+            }  
+            return deviceId;  
+        }  
+
+        function initMap() {  
+            // Initialize the map centered at a default location  
+            const initialLocation = { lat: -34.397, lng: 150.644 }; // Default coordinates (can be changed)  
+            map = new google.maps.Map(document.getElementById("map"), {  
+                zoom: 15,  
+                center: initialLocation,  
+            });  
+
+            // Initialize the marker  
+            marker = new google.maps.Marker({  
+                position: initialLocation,  
+                map,  
+                title: "Your Location",  
+            });  
+        }  
+
+        document.getElementById('startTracking').onclick = function() {  
+            if (navigator.geolocation) {  
+                trackingInterval = setInterval(sendLocation, 5000);  
+            } else {  
+                alert("Geolocation is not supported by this browser.");  
+            }  
+        };  
+
+        function sendLocation() {  
+            navigator.geolocation.getCurrentPosition(position => {  
+                const { latitude, longitude } = position.coords;  
+                document.getElementById('locationDisplay').innerText =  
+                    `Latitude: ${latitude}, Longitude: ${longitude}`;  
+
+                // Update marker position on the map  
+                const newPosition = { lat: latitude, lng: longitude };  
+                marker.setPosition(newPosition);  
+                map.setCenter(newPosition);  
+
+                fetch('/update-location', {  
+                    method: 'POST',  
+                    headers: {  
+                        'Content-Type': 'application/json',  
+                    },  
+                    body: JSON.stringify({  
+                        id: getDeviceId(), // Use the unique identifier for this device/user  
+                        latitude: latitude,  
+                        longitude: longitude  
+                    }),  
+                }).then(response => {  
+                    if (response.ok) {  
+                        console.log("Location updated successfully.");  
+                    } else {  
+                        console.error("Error updating location.");  
+                    }  
+                });  
+            });  
+        }  
+
+        // Retrieve or create the device ID when the page loads  
+        window.onload = function() {  
+            getDeviceId();  
+        };  
+    </script>  
+</body>  
+</html>
