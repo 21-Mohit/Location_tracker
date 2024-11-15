@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request, jsonify  
 from db import  update_coordinates 
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)  
 app.secret_key = "my_secret_key" 
+
+load_dotenv()
 
 @app.route('/')  
 def index():  
@@ -10,7 +14,8 @@ def index():
 
 @app.route('/track')  
 def track():  
-    return render_template('tracking.html')  
+    api_key = os.getenv('API')
+    return render_template('tracking.html',API_KEY = api_key)  
 
 @app.route('/update-location', methods=['POST'])  
 def update_location():  
@@ -28,4 +33,5 @@ def update_location():
         app.log_exception(f'getting exception in updating location, data is {data}')
 
 if __name__ == '__main__':  
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5002))
+    app.run(debug=True, host = '0.0.0.0', port = port)

@@ -1,6 +1,12 @@
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
-client = MongoClient('mongodb+srv://mohit:vmbXc8pzgJzhiRNa@cluster0.tbarxzw.mongodb.net/')
+load_dotenv()
+db_url = os.getenv('DB')
+
+client = MongoClient(db_url)
+
 
 tracker = client.get_database('Tracker')
 coordinate_db = tracker.get_collection("coordinates") #get_collection
