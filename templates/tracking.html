@@ -28,10 +28,14 @@
         let trackingInterval;  
         let map;  
         let userMarker;  
-        let userId;  // Variable to store the unique user ID  
+        let deviceId;  // Variable to store the unique user ID  
         let allUserMarkers = []; // To store markers for all users  
 
-        // Function to retrieve the user ID from session or local storage  
+             // Function to generate a unique device ID  
+    function generateDeviceId() {  
+        return 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);  
+            } 
+            // Function to retrieve the user ID from session or local storage  
         function getUserId() {  
             deviceId = localStorage.getItem('deviceId');  
             if (!deviceId) {  
@@ -54,12 +58,25 @@
                 position: initialLocation,  
                 map,  
                 title: "Your Location",  
-            });  
+            });
+            fetchAllUserLocations();  
+
         }  
+
+        function showAllUserMarkers(){
+            
+            allUserMarkers.forEach(marker => {  
+                // Set the marker to be displayed on the map  
+                console.log('inside usermarker')
+                console.log(marker)
+                marker.setMap(map);  
+            });
+        }
 
         document.getElementById('startTracking').onclick = function() {  
             if (navigator.geolocation) {  
-                trackingInterval = setInterval(sendLocation, 5000);  
+                trackingInterval = setInterval(sendLocation, 5003);  
+                //trackingIntervaluser = setInterval(fetchAllUserLocations, 6000); 
             } else {  
                 alert("Geolocation is not supported by this browser.");  
             }  
@@ -75,6 +92,7 @@
                 const newPosition = { lat: latitude, lng: longitude };  
                 userMarker.setPosition(newPosition);  
                 map.setCenter(newPosition);  
+                
 
                 fetch('/update-location', {  
                     method: 'POST',  
@@ -102,17 +120,24 @@
                 .then(response => response.json())  
                 .then(locations => {  
                     // Clear existing markers from the map  
-                    allUserMarkers.forEach(marker => marker.setMap(null));  
+                    //allUserMarkers.forEach(marker => marker.setMap(null));  
                     allUserMarkers = []; // Reset the markers array  
-
+                    console.log("get_all_location")
                     locations.forEach(location => {  
+                        //console.log(location)
+                        //console.log(location.longitude)
+                        console.log("inside all locations")
+                        console.log(map)
                         const userMarker = new google.maps.Marker({  
                             position: { lat: location.latitude, lng: location.longitude },  
-                            map,  
-                            title: location.username || "User", // Assuming location contains a username  
+                            map:map,
+                            title: location._id|| "User", // Assuming location contains a username  
                         });  
+            
                         allUserMarkers.push(userMarker);  
-                    });  
+                        
+                    }); 
+                    //howAllUserMarkers(); 
                 })  
                 .catch(error => console.error('Error fetching user locations:', error));  
         }  

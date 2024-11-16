@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect,url_for ,session
-from db import  update_coordinates,find_user_by_name, create_user  
+from db import fetch_all_coordinates, update_coordinates,find_user_by_name, create_user  
 from dotenv import load_dotenv
 
 import os
@@ -68,6 +68,10 @@ def update_location():
     except:
         app.log_exception(f'getting exception in updating location, data is {data}')
 
+@app.route('/get-all-locations',methods = ['GET'])
+def get_locations():
+    locations = fetch_all_coordinates()
+    return locations
 if __name__ == '__main__':  
     port = int(os.environ.get('PORT', 5003))
     app.run(debug=True, host = '0.0.0.0', port = port)

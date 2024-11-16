@@ -45,3 +45,9 @@ def find_user_by_name(username):
         return user  # Return the user document  
     return None  # No user found
 
+def fetch_all_coordinates():
+    data = coordinate_db.find({})
+    return list(data)
+    
+fetch_all_coordinates()
+
