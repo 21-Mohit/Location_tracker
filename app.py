@@ -1,21 +1,57 @@
-from flask import Flask, render_template, request, jsonify  
-from db import  update_coordinates 
+from flask import Flask, render_template, request, jsonify, redirect,url_for ,session
+from db import  update_coordinates,find_user_by_name, create_user  
 from dotenv import load_dotenv
+from flask_bcrypt import Bcrypt 
 import os
 
 app = Flask(__name__)  
 app.secret_key = "my_secret_key" 
 
 load_dotenv()
+bcrypt = Bcrypt(app)
 
 @app.route('/')  
 def index():  
+    
     return render_template('index.html')  
 
 @app.route('/track')  
-def track():  
+def track():
+   # app.logger.info(type(session)) 
+    #app.logger.info(session)
+    #flag = 'user_id' not in session
+    #app.logger.info(flag)
+    #if 'user_id' not in session:  
+       # return redirect(url_for('login')) 
     api_key = os.getenv('API')
+
     return render_template('tracking.html',API_KEY = api_key)  
+
+@app.route('/register', methods=['GET', 'POST'])  
+def register():  
+    if request.method == 'POST':  
+        username = request.form['username']  
+        password = request.form['password']
+        #bcrypt.generate_password_hash(request.form['password']).decode('utf-8')  
+        create_user(username, password)  # insert user into the database  
+        return redirect(url_for('login'))  
+    return render_template('register.html') 
+
+@app.route('/login', methods=['GET', 'POST'])  
+def login():  
+    if request.method == 'POST':  
+        username = request.form['username']  
+        password = request.form['password']  
+        user = find_user_by_name(username)  
+        app.logger.info(user)
+        #app.logger.info(f'username and password is {username },{password}')
+        if user and user.get('password')==password:  
+            session['user_id'] = str(user['_id'])   # Storing user ID in session  
+            #app.logger.info(f'user_id while storing in session {username}')
+            return redirect(url_for('track'))  
+        else:  
+            return "Invalid username or password", 401  
+    return render_template('login.html')  
 
 @app.route('/update-location', methods=['POST'])  
 def update_location():  
@@ -33,5 +69,5 @@ def update_location():
         app.log_exception(f'getting exception in updating location, data is {data}')
 
 if __name__ == '__main__':  
-    port = int(os.environ.get('PORT', 5002))
+    port = int(os.environ.get('PORT', 5003))
     app.run(debug=True, host = '0.0.0.0', port = port)

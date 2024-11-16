@@ -11,43 +11,34 @@
         }  
         #map {  
             width: 100%;  
-            height: 400px; /* Set the different height for the map */  
+            height: 400px; /* Set the height for the map */  
             margin-top: 20px;  
         }  
     </style>  
     <!-- Load the Google Maps JavaScript API -->  
-     
-    <script async defer  
-    src={{ API_KEY }}>  
-    </script>  
+    <script async defer src={{ API_KEY }}></script>  
 </head>  
 <body>  
     <h1>Location Tracking</h1>  
     <button id="startTracking">Start Tracking</button>  
-    
     <div id="locationDisplay"></div>  
     <div id="map"></div>  
 
     <script>  
         let trackingInterval;  
         let map;  
-        let marker;  
-        let deviceId;  // Variable to store the unique device ID  
+        let userMarker;  
+        let userId;  // Variable to store the unique user ID  
+        let allUserMarkers = []; // To store markers for all users  
 
-        // Function to generate a unique device ID  
-        function generateDeviceId() {  
-            return 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);  
-        }  
-
-        // Function to retrieve or create a device ID  
-        function getDeviceId() {  
-            // Check if a device ID is already stored in localStorage  
+        // Function to retrieve the user ID from session or local storage  
+        function getUserId() {  
             deviceId = localStorage.getItem('deviceId');  
             if (!deviceId) {  
                 deviceId = generateDeviceId();  // Generate a new device ID  
                 localStorage.setItem('deviceId', deviceId);  // Store it in localStorage  
             }  
-            return deviceId;  
+            return deviceId;
         }  
 
         function initMap() {  
@@ -58,8 +49,8 @@
                 center: initialLocation,  
             });  
 
-            // Initialize the marker  
-            marker = new google.maps.Marker({  
+            // Initialize the user marker  
+            userMarker = new google.maps.Marker({  
                 position: initialLocation,  
                 map,  
                 title: "Your Location",  
@@ -80,9 +71,9 @@
                 document.getElementById('locationDisplay').innerText =  
                     `Latitude: ${latitude}, Longitude: ${longitude}`;  
 
-                // Update marker position on the map  
+                // Update user marker position on the map  
                 const newPosition = { lat: latitude, lng: longitude };  
-                marker.setPosition(newPosition);  
+                userMarker.setPosition(newPosition);  
                 map.setCenter(newPosition);  
 
                 fetch('/update-location', {  
@@ -91,13 +82,14 @@
                         'Content-Type': 'application/json',  
                     },  
                     body: JSON.stringify({  
-                        id: getDeviceId(), // Use the unique identifier for this device/user  
+                        id: getUserId(), // Use the unique identifier for this user  
                         latitude: latitude,  
                         longitude: longitude  
                     }),  
                 }).then(response => {  
                     if (response.ok) {  
                         console.log("Location updated successfully.");  
+                        fetchAllUserLocations(); // Fetch all users' locations after updating  
                     } else {  
                         console.error("Error updating location.");  
                     }  
@@ -105,9 +97,30 @@
             });  
         }  
 
-        // Retrieve or create the device ID when the page loads  
+        function fetchAllUserLocations() {  
+            fetch('/get-all-locations') // Endpoint to fetch all users' locations  
+                .then(response => response.json())  
+                .then(locations => {  
+                    // Clear existing markers from the map  
+                    allUserMarkers.forEach(marker => marker.setMap(null));  
+                    allUserMarkers = []; // Reset the markers array  
+
+                    locations.forEach(location => {  
+                        const userMarker = new google.maps.Marker({  
+                            position: { lat: location.latitude, lng: location.longitude },  
+                            map,  
+                            title: location.username || "User", // Assuming location contains a username  
+                        });  
+                        allUserMarkers.push(userMarker);  
+                    });  
+                })  
+                .catch(error => console.error('Error fetching user locations:', error));  
+        }  
+
+        // Retrieve or create the user ID when the page loads  
         window.onload = function() {  
-            getDeviceId();  
+            getUserId();  
+            initMap();  
         };  
     </script>  
 </body>  
