@@ -1,14 +1,14 @@
 from flask import Flask, render_template, request, jsonify, redirect,url_for ,session
 from db import  update_coordinates,find_user_by_name, create_user  
 from dotenv import load_dotenv
-from flask_bcrypt import Bcrypt 
+
 import os
 
 app = Flask(__name__)  
 app.secret_key = "my_secret_key" 
 
 load_dotenv()
-bcrypt = Bcrypt(app)
+
 
 @app.route('/')  
 def index():  
